@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">lab3</string>
+    <string name="logo_text">Список дел</string>
+    <string name="action_text">Мне надо сделать...</string>
+</resources>
