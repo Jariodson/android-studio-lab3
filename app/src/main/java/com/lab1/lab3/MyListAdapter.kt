@@ -1,6 +1,7 @@
 package com.lab1.lab3
 
 import android.app.Activity
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,7 +16,7 @@ class MyListAdapter(
     private val dataSource: MutableList<MainActivity.ListItem>,
     private val coroutineScope: CoroutineScope,
     private val database: MainActivity.AppDatabase
-) : ArrayAdapter<MainActivity.ListItem>(context, R.layout.list_item) {
+) : ArrayAdapter<MainActivity.ListItem>(context, R.layout.list_item, dataSource) {
 
     init {
         // Проверка количества элементов в dataSource
@@ -31,10 +32,25 @@ class MyListAdapter(
 
         val checkBox = view.findViewById<CheckBox>(R.id.checkBox)
         val deleteButton = view.findViewById<Button>(R.id.delete_button)
+        val listView = view.findViewById<View>(R.id.list_view)
 
         val item = dataSource[position]
         checkBox.text = item.task
-        checkBox.isChecked = item.status
+
+        checkBox.setOnCheckedChangeListener(null) // Отключаем слушатель
+        checkBox.isChecked = item.status // Устанавливаем состояние
+
+        checkBox.setOnCheckedChangeListener { _, isChecked ->
+            coroutineScope.launch {
+                item.status = isChecked
+                if (isChecked){
+                    checkBox.setBackgroundColor(Color.GREEN)
+                } else {
+                    checkBox.setBackgroundColor(Color.WHITE)
+                }
+                database.listItemDao().update(item)
+            }
+        }
 
         deleteButton.setOnClickListener {
             coroutineScope.launch {
@@ -49,14 +65,6 @@ class MyListAdapter(
             }
         }
 
-        checkBox.setOnCheckedChangeListener(null) // Отключаем слушатель
-        checkBox.isChecked = item.status // Устанавливаем состояние
-        checkBox.setOnCheckedChangeListener { _, isChecked ->
-            coroutineScope.launch {
-                item.status = isChecked
-                database.listItemDao().update(item)
-            }
-        }
         return view
     }
 }
