@@ -1,8 +1,10 @@
 package com.lab1.lab3
 
 import android.annotation.SuppressLint
+import android.opengl.Visibility
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ListView
@@ -12,6 +14,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.room.*
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         val userInput = findViewById<EditText>(R.id.user_input)
         val addButton = findViewById<Button>(R.id.add_button)
         val listView = findViewById<ListView>(R.id.list_view)
+        val deleteAll = findViewById<Button>(R.id.button_deleteAll)
 
         val database = (application as DataBaseInit).database
         val listItemDao = database.listItemDao()
@@ -49,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val items = listItemDao.getAllItems()
             if (items.isNotEmpty()) {
+                deleteAll.visibility = View.VISIBLE
                 listItems.addAll(items)
                 Log.d("MainActivity", "Элементы списка: $listItems")
                 adapter.notifyDataSetChanged()
@@ -67,6 +73,7 @@ class MainActivity : AppCompatActivity() {
                         listItems.add(newItem)
                         Log.d("MainActivity", "Элементы списка: $listItems")
                         adapter.notifyDataSetChanged()
+                        deleteAll.visibility = View.VISIBLE
                         userInput.setText("")
                     }
                 } catch (e: Exception) {
@@ -79,6 +86,17 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
+        }
+
+        deleteAll.setOnClickListener {
+            lifecycleScope.launch {
+                listItemDao.deleteAllItems()
+                listItems.clear()
+                Log.d("MainActivity", "Все задачи удалены!")
+                deleteAll.visibility = View.INVISIBLE
+                adapter.notifyDataSetChanged()
+            }
+            Toast.makeText(this, "Все задачи удалены!", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -103,6 +121,9 @@ class MainActivity : AppCompatActivity() {
 
         @Query("SELECT * FROM to_do_list")
         suspend fun getAllItems(): List<ListItem>
+
+        @Query("DELETE FROM to_do_list")
+        suspend fun deleteAllItems()
     }
 
     @Database(version = 1, entities = [ListItem::class])
